@@ -1,0 +1,88 @@
+name: Remote Debug and Test
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Select Testing Mode'
+        required: true
+        default: 'web-tunnel'
+        type: choice
+        options:
+          - 'web-tunnel'
+          - 'rdp'
+
+jobs:
+  remote-test:
+    runs-on: windows-latest
+    name: Windows Remote Session
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # MODE 1: Web GUI Tunnel Setup
+      - name: Start GUI App in Background
+        if: ${{ inputs.mode == 'web-tunnel' }}
+        shell: pwsh
+        env:
+          DISABLE_BROWSER: "1"
+          DISABLE_HEARTBEAT: "1"
+        run: |
+          Write-Host "Starting gui_app.py in background..."
+          Start-Process python -ArgumentList "gui_app.py" -NoNewWindow
+          Start-Sleep -Seconds 3 # Give it a moment to bind to port 8000
+
+      - name: Expose App Port (8000) via Bore
+        if: ${{ inputs.mode == 'web-tunnel' }}
+        shell: pwsh
+        run: |
+          Write-Host "Downloading Bore Tunnel..."
+          Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.2/bore-v0.5.2-x86_64-pc-windows-msvc.zip -OutFile bore.zip
+          Expand-Archive bore.zip -DestinationPath .
+          Write-Host "--------------------------------------------------------"
+          Write-Host "Tunnel is starting. Look at the output lines below to find"
+          Write-Host "the public address (e.g. bore.pub:xxxxx)."
+          Write-Host "Open http://bore.pub:xxxxx in your Mac's browser to test."
+          Write-Host "--------------------------------------------------------"
+          .\bore.exe local 8000 --to bore.pub
+
+      # MODE 2: Windows Remote Desktop (RDP) Setup
+      - name: Enable RDP and Set Password
+        if: ${{ inputs.mode == 'rdp' }}
+        shell: pwsh
+        run: |
+          Write-Host "Enabling Remote Desktop Services..."
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+          
+          Write-Host "Setting password for runneradmin..."
+          net user runneradmin LiveScraper123!
+
+      - name: Expose RDP Port (3389) via Bore
+        if: ${{ inputs.mode == 'rdp' }}
+        shell: pwsh
+        run: |
+          Write-Host "Downloading Bore Tunnel..."
+          Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.2/bore-v0.5.2-x86_64-pc-windows-msvc.zip -OutFile bore.zip
+          Expand-Archive bore.zip -DestinationPath .
+          Write-Host "--------------------------------------------------------"
+          Write-Host "RDP Tunnel starting."
+          Write-Host "Use an RDP client (like Microsoft Remote Desktop on Mac)"
+          Write-Host "to connect to the printed address (e.g. bore.pub:xxxxx)."
+          Write-Host "Credentials:"
+          Write-Host "  - Username: runneradmin"
+          Write-Host "  - Password: LiveScraper123!"
+          Write-Host "--------------------------------------------------------"
+          .\bore.exe local 3389 --to bore.pub

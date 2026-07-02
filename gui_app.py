@@ -1069,8 +1069,10 @@ def run():
                 os.kill(os.getpid(), signal.SIGTERM)
                 break
 
-    threading.Thread(target=open_in_app_mode, daemon=True).start()
-    threading.Thread(target=heartbeat_watcher, daemon=True).start()
+    if os.environ.get("DISABLE_BROWSER") != "1":
+        threading.Thread(target=open_in_app_mode, daemon=True).start()
+    if os.environ.get("DISABLE_HEARTBEAT") != "1":
+        threading.Thread(target=heartbeat_watcher, daemon=True).start()
     
     server_address = ("", PORT)
     try:
