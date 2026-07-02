@@ -18,7 +18,7 @@ Before running the application, make sure your machine has the following:
 1. Extract the project ZIP file.
 2. Open your terminal and navigate to the project directory:
    ```bash
-   cd LIVE_capturing_18Jun
+   cd LIVE-Scraper-main
    ```
 3. Install the required Python packages:
    ```bash
