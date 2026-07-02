@@ -23,3 +23,5 @@ screenshots/
 # System files
 .DS_Store
 
+# Exception: Do not ignore requirements.txt
+!requirements.txt

@@ -22,7 +22,7 @@ Before running the application, make sure your machine has the following:
    ```
 3. Install the required Python packages:
    ```bash
-   pip install requests beautifulsoup4 gspread google-auth google-auth-oauthlib google-auth-httplib2 selenium
+   pip install -r requirements.txt
    ```
 
 *Note: Modern versions of Selenium (4.x) will automatically download and manage the matching Chrome WebDriver in the background, so you do not need to install `chromedriver` manually.*
