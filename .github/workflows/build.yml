@@ -1,4 +1,4 @@
-name: Build Windows Executable
+name: Build Standalone Executables
 
 on:
   push:
@@ -7,8 +7,9 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
+    name: Build Windows Executable
 
     steps:
       - name: Checkout repository
@@ -25,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
-      - name: Compile Executable with PyInstaller
+      - name: Compile Windows Executable
         run: |
           pyinstaller --onefile --noconsole --clean `
             --collect-submodules=selenium `
@@ -34,8 +35,47 @@ jobs:
             --add-data "index.js;." `
             gui_app.py
 
-      - name: Upload Executable Artifact
+      - name: Upload Windows Executable Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LiveScraper-Windows-Executable
+          name: LiveScraper-Windows
           path: dist/gui_app.exe
+
+  build-macos:
+    runs-on: macos-latest
+    name: Build macOS App Bundle
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install -r requirements.txt pyinstaller
+
+      - name: Compile macOS App Bundle
+        run: |
+          pyinstaller --onedir --noconsole --clean \
+            --collect-submodules=selenium \
+            --add-data "index.html:." \
+            --add-data "index.css:." \
+            --add-data "index.js:." \
+            gui_app.py
+
+      - name: Zip macOS App Bundle (Preserve Executable Permissions)
+        run: |
+          cd dist
+          zip -r gui_app_macos.zip gui_app.app
+
+      - name: Upload macOS Executable Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiveScraper-macOS
+          path: dist/gui_app_macos.zip
