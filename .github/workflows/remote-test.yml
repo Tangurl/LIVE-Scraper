@@ -90,3 +90,12 @@ jobs:
           Write-Host "  - Password: LiveScraper123!"
           Write-Host "--------------------------------------------------------"
           .\bore.exe local 3389 --to bore.pub --local-host 127.0.0.1
+
+      - name: Print final GUI App logs
+        if: always()
+        shell: pwsh
+        run: |
+          Write-Host "=== FINAL gui_app.py STDOUT ==="
+          Get-Content -Path "gui_app.log" -ErrorAction SilentlyContinue
+          Write-Host "=== FINAL gui_app.py STDERR ==="
+          Get-Content -Path "gui_app_err.log" -ErrorAction SilentlyContinue

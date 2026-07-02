@@ -1008,6 +1008,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
 def run():
     print(f"Starting server on port {PORT}...")
     print(f"Project Directory: {DIRECTORY}")
+    print(f"DISABLE_BROWSER: {os.environ.get('DISABLE_BROWSER')}")
+    print(f"DISABLE_HEARTBEAT: {os.environ.get('DISABLE_HEARTBEAT')}")
     
     # Start background status checker
     checker_thread = threading.Thread(target=status_checker_worker, daemon=True)
@@ -1074,7 +1076,7 @@ def run():
     if os.environ.get("DISABLE_HEARTBEAT") != "1":
         threading.Thread(target=heartbeat_watcher, daemon=True).start()
     
-    server_address = ("", PORT)
+    server_address = ("127.0.0.1", PORT)
     try:
         httpd = HTTPServer(server_address, DashboardHandler)
     except OSError as e:
