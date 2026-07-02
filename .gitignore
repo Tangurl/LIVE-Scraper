@@ -1,0 +1,25 @@
+# Python build files
+__pycache__/
+*.pyc
+venv/
+temp_venv/
+
+# PyInstaller build directories
+build/
+dist/
+*.spec
+
+# User credentials and settings (not pushed to GitHub)
+config.json
+token.json
+chrome_profile/
+
+# Data outputs & logs
+*.csv
+*.csv.bak
+*.txt
+screenshots/
+
+# System files
+.DS_Store
+

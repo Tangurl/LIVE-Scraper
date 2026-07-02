@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIVE Capturer - Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="logo-section">
+        <div class="logo-icon">🔴</div>
+        <h2>LIVE Capturer</h2>
+      </div>
+      
+      <div class="control-panel card">
+        <h3>Controls</h3>
+        <div class="status-indicator">
+          <span>Status:</span>
+          <span id="status-badge" class="badge idle">Idle</span>
+        </div>
+        <button id="btn-run" class="btn btn-primary btn-pulse">Run Scraper</button>
+        <button id="btn-stop" class="btn btn-danger" disabled>Stop Scraper</button>
+      </div>
+      
+      <div class="scheduler-panel card">
+        <h3>Scheduler Settings</h3>
+        <div class="scheduler-inputs">
+          <div class="form-group">
+            <label for="scheduler-hours">Hours</label>
+            <input type="number" id="scheduler-hours" min="0" value="0">
+          </div>
+          <div class="form-group">
+            <label for="scheduler-minutes">Min</label>
+            <input type="number" id="scheduler-minutes" min="0" value="10">
+          </div>
+          <div class="form-group">
+            <label for="scheduler-seconds">Sec</label>
+            <input type="number" id="scheduler-seconds" min="0" value="0">
+          </div>
+        </div>
+        <div id="scheduler-status-text" class="scheduler-status">Scheduler: Disabled</div>
+        <div class="form-group" style="margin-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+          <label for="scheduler-auto-add" style="font-size: 11px; margin-bottom: 0;">On new platform added:</label>
+          <select id="scheduler-auto-add" style="padding: 6px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color);">
+            <option value="ask">Ask to add to schedule</option>
+            <option value="always">Always add automatically</option>
+            <option value="never">Never add automatically</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="config-panel card">
+        <h3>System Settings</h3>
+        <div class="form-group">
+          <label for="google-sheet-id">Google Sheet ID</label>
+          <input type="text" id="google-sheet-id" placeholder="Spreadsheet ID">
+        </div>
+        <div class="form-group">
+          <label for="token-path">Token Path</label>
+          <input type="text" id="token-path" placeholder="Path to token.json">
+        </div>
+        <div class="form-group checkbox-group" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 10px;">
+          <input type="checkbox" id="scrape-comments-enabled" checked style="width: auto; margin-bottom: 0;">
+          <label for="scrape-comments-enabled" style="margin-bottom: 0; cursor: pointer;">Scrape Live Comments</label>
+        </div>
+        <div id="comment-duration-group" class="form-group" style="margin-bottom: 15px;">
+          <label for="comment-scrape-duration" style="font-size: 11px;">Comment Capture Duration (seconds)</label>
+          <input type="number" id="comment-scrape-duration" min="1" value="30" style="padding: 6px; font-size: 11px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label for="max-checking-workers" style="font-size: 11px;">Max Checking Browsers (Phase 1, 0 for unlimited)</label>
+          <input type="number" id="max-checking-workers" min="0" max="32" value="6" style="padding: 6px; font-size: 11px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="max-comment-workers" style="font-size: 11px;">Max Comment Browsers (Phase 2, 0 for unlimited)</label>
+          <input type="number" id="max-comment-workers" min="0" max="32" value="5" style="padding: 6px; font-size: 11px;">
+        </div>
+        <div class="form-group checkbox-group" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 10px;">
+          <input type="checkbox" id="use-persistent-profile" style="width: auto; margin-bottom: 0;">
+          <label for="use-persistent-profile" style="margin-bottom: 0; cursor: pointer; font-size: 11px;">Use Persistent Profile</label>
+        </div>
+        <div class="form-group" style="margin-bottom: 15px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+          <label style="font-size: 11px; font-weight: bold; margin-bottom: 5px; display: block;">Login Helper (Solve Captchas)</label>
+          <div style="display: flex; gap: 6px;">
+            <select id="login-helper-platform" style="padding: 6px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); flex: 1; height: 28px;">
+              <option value="tiktok">TikTok</option>
+              <option value="facebook">Facebook</option>
+              <option value="youtube">YouTube</option>
+            </select>
+            <button id="btn-open-login" class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; margin-top: 0; white-space: nowrap; height: 28px; line-height: 1;">Open Chrome</button>
+          </div>
+        </div>
+        <button id="btn-save-config" class="btn btn-secondary">Save Settings</button>
+        <button id="btn-quit-app" class="btn btn-danger" style="margin-top: 10px; width: 100%;">Quit App</button>
+      </div>
+      
+      <div class="sidebar-footer">
+        <p>Local Web GUI v1.0</p>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <header class="main-header">
+        <div class="header-title">
+          <h1>Channels Dashboard</h1>
+          <p>Configure streaming platforms and capture direct links manually.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-reorder-channels" class="btn btn-outline">Rearrange Order ↕️</button>
+          <button id="btn-add-channel" class="btn btn-primary">+ Add News Channel</button>
+        </div>
+      </header>
+
+      <!-- STATUS BAR (LEGENDS & LAST CHECKED TIME) -->
+      <div class="dashboard-status-bar card">
+        <div class="status-legends">
+          <span class="legend-item"><span class="status-dot live"></span> Live</span>
+          <span class="legend-item"><span class="status-dot offline"></span> Offline/Ended</span>
+          <span class="legend-item"><span class="status-dot checking"></span> Checking</span>
+          <span class="legend-frequency">(Checks every 5 mins)</span>
+        </div>
+        <div class="last-checked-container">
+          <button id="btn-check-now" class="btn btn-sm btn-outline" style="margin-right: 12px; padding: 4px 10px; font-size: 11px;">Check Now 🔄</button>
+          <span class="meta-label">Last Status Check:</span>
+          <span id="last-check-time" class="meta-value">Never</span>
+        </div>
+      </div>
+
+      <!-- CHANNELS GRID -->
+      <section id="channels-grid" class="channels-grid">
+        <!-- Rendered dynamically by index.js -->
+      </section>
+
+      <!-- CONSOLE LOGS -->
+      <section class="console-section card">
+        <div class="console-header">
+          <h3>Execution Terminal Log</h3>
+          <button id="btn-clear-logs" class="btn btn-sm btn-outline">Clear Logs</button>
+        </div>
+        <div id="terminal-output" class="terminal-output">
+          <span class="terminal-placeholder">Scraper is idle. Click "Run Scraper" to start monitoring...</span>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <!-- URL CONFIGURATION MODAL -->
+  <div id="url-modal" class="modal-overlay">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h3 id="modal-title">Configure Link</h3>
+        <button id="btn-close-modal" class="close-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">Paste the exact live stream URL or page URL you want to scrape for this platform.</p>
+        <div class="form-group">
+          <div class="label-header">
+            <label for="modal-url-input" style="margin-bottom: 0;">Scraping URL</label>
+            <button id="btn-open-modal-url" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 11px;">Open Link ↗️</button>
+          </div>
+          <textarea id="modal-url-input" rows="2" placeholder="https://www.youtube.com/... or https://www.facebook.com/..."></textarea>
+        </div>
+        
+        <!-- LIVE SCAN WITH KEYWORD -->
+        <div id="modal-scan-section" class="modal-scan-section">
+          <hr class="modal-divider">
+          <h4>Auto Scan Live Stream</h4>
+          <div id="scan-default-url-info" class="scan-info-text"></div>
+          <div id="scan-controls-group" class="scan-input-group">
+            <input type="text" id="modal-keyword-input" placeholder="Enter keyword to search (e.g. LIVE)...">
+            <button id="btn-scan-live" class="btn btn-secondary">Scan Live Stream</button>
+          </div>
+          <div id="scan-no-default-url" class="scan-warning hidden">
+            ⚠️ No default URL configured for this platform. Set it up using the channel settings cog (⚙️) first.
+          </div>
+          <div id="scan-loading" class="scan-loading hidden">
+            <span class="spinner"></span> Running selenium scanner, please wait (this might take 10-15s)...
+          </div>
+          <div id="scan-results-container" class="scan-results-container hidden">
+            <h5>Scanned Results</h5>
+            <div id="scan-results-list" class="scan-results-list">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-modal" class="btn btn-secondary">Cancel</button>
+        <button id="btn-save-url" class="btn btn-primary">Save Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHANNEL SETTINGS MODAL (DEFAULT URLS) -->
+  <div id="channel-settings-modal" class="modal-overlay">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h3 id="channel-settings-title">Channel Settings (Default URLs)</h3>
+        <button id="btn-close-settings-modal" class="close-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">Configure the default page URLs for each platform. The scraper will use these to search for active live streams matching keywords.</p>
+        <div class="form-group">
+          <label for="settings-default-youtube">YouTube Default URL</label>
+          <input type="text" id="settings-default-youtube" placeholder="e.g. https://www.youtube.com/@thairathnews/streams">
+        </div>
+        <div class="form-group">
+          <label for="settings-default-facebook">Facebook Default URL</label>
+          <input type="text" id="settings-default-facebook" placeholder="e.g. https://www.facebook.com/watch/thairath/">
+        </div>
+        <div class="form-group">
+          <label for="settings-default-tiktok">TikTok Default URL</label>
+          <input type="text" id="settings-default-tiktok" placeholder="e.g. https://www.tiktok.com/@thairath_news">
+        </div>
+        <div class="form-group">
+          <label for="settings-default-x">X (Twitter) Default URL</label>
+          <input type="text" id="settings-default-x" placeholder="e.g. https://x.com/ThaiPBS">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-settings-modal" class="btn btn-secondary">Cancel</button>
+        <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RUN SCRAPER CHANNELS MODAL -->
+  <div id="run-channels-modal" class="modal-overlay">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h3>Select Channels to Scrape</h3>
+        <button id="btn-close-run-modal" class="close-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">Choose which news channels to monitor for this run. Default is all channels.</p>
+        
+        <div id="run-channels-list" class="platform-checkboxes-group">
+          <!-- Populated dynamically by index.js -->
+        </div>
+        
+        <div class="checkbox-actions">
+          <button id="btn-select-all" class="btn btn-sm btn-secondary">Select All</button>
+          <button id="btn-deselect-all" class="btn btn-sm btn-secondary">Deselect All</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-run-modal" class="btn btn-secondary">Cancel</button>
+        <button id="btn-confirm-run" class="btn btn-primary">Run Scraper</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REARRANGE CHANNELS MODAL -->
+  <div id="reorder-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Rearrange Channel Order</h3>
+        <button id="btn-close-reorder-modal" class="close-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">Drag and drop channels to rearrange their display order on the dashboard.</p>
+        
+        <div id="reorder-list" class="reorder-list">
+          <!-- Populated dynamically by index.js -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-reorder-modal" class="btn btn-secondary">Cancel</button>
+        <button id="btn-save-reorder" class="btn btn-primary">Save Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduler Targets Update Modal -->
+  <div id="scheduler-update-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Update Scheduled Targets</h3>
+        <button id="btn-close-scheduler-update-modal" class="close-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">The following platforms/channels were added since the scraper started:</p>
+        <ul id="new-platforms-list" style="margin-bottom: 20px; line-height: 1.6; padding-left: 20px; font-size: 13px; text-align: left;">
+          <!-- Will be filled dynamically -->
+        </ul>
+        <p class="modal-description">Would you like to include these new platforms in the future scheduled scrapes?</p>
+        
+        <hr class="modal-divider" style="margin: 15px 0;">
+        
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+          <label for="select-scheduler-behavior">Default behavior for future additions:</label>
+          <select id="select-scheduler-behavior" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 12px;">
+            <option value="ask">Ask to add to schedule</option>
+            <option value="always">Always add automatically</option>
+            <option value="never">Never add automatically</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-scheduler-update" class="btn btn-secondary">Keep Original Schedule</button>
+        <button id="btn-confirm-scheduler-update" class="btn btn-primary">Yes, Include Them</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- URL DUMP / BULK IMPORT MODAL -->
+  <div id="url-dump-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="url-dump-modal-title">Dump URLs</h3>
+        <button id="btn-close-url-dump-modal" class="close-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">Paste one or more stream/page URLs below (separated by commas, spaces, or newlines). The system will automatically detect the platform for each URL and add them to this channel.</p>
+        
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 5px; margin-top: 15px;">
+          <label for="url-dump-textarea">Paste URLs:</label>
+          <textarea id="url-dump-textarea" rows="8" placeholder="https://www.youtube.com/watch?v=...&#10;https://www.facebook.com/watch/?v=...&#10;https://www.tiktok.com/@.../live" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+        
+        <div id="url-dump-error" style="color: #ff4a4a; font-size: 12px; margin-top: 10px; display: none; white-space: pre-wrap; max-height: 150px; overflow-y: auto; text-align: left; padding: 10px; background: rgba(255, 74, 74, 0.05); border: 1px solid rgba(255, 74, 74, 0.2); border-radius: 4px;"></div>
+        <div id="url-dump-success-msg" style="color: #4aff4a; font-size: 12px; margin-top: 10px; display: none; text-align: left; padding: 10px; background: rgba(74, 255, 74, 0.05); border: 1px solid rgba(74, 255, 74, 0.2); border-radius: 4px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-url-dump" class="btn btn-secondary">Cancel</button>
+        <button id="btn-import-url-dump" class="btn btn-primary">Import URLs</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/index.js"></script>
+</body>
+</html>
