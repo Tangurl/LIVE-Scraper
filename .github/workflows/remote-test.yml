@@ -40,7 +40,7 @@ jobs:
           DISABLE_HEARTBEAT: "1"
         run: |
           Write-Host "Starting gui_app.py in background..."
-          Start-Process python -ArgumentList "gui_app.py" -NoNewWindow -RedirectStandardOutput "gui_app.log" -RedirectStandardError "gui_app_err.log"
+          Start-Process python -ArgumentList "-u gui_app.py" -NoNewWindow -RedirectStandardOutput "gui_app.log" -RedirectStandardError "gui_app_err.log"
           Start-Sleep -Seconds 5
           Write-Host "=== gui_app.py STDOUT ==="
           Get-Content -Path "gui_app.log" -ErrorAction SilentlyContinue
