@@ -32,7 +32,7 @@ jobs:
           pip install -r requirements.txt
 
       # MODE 1: Web GUI Tunnel Setup
-      - name: Start GUI App in Background
+      - name: Start App and Expose Port via Bore
         if: ${{ inputs.mode == 'web-tunnel' }}
         shell: pwsh
         env:
@@ -41,28 +41,22 @@ jobs:
         run: |
           Write-Host "Starting gui_app.py in background..."
           Start-Process python -ArgumentList "-u gui_app.py" -NoNewWindow -RedirectStandardOutput "gui_app.log" -RedirectStandardError "gui_app_err.log"
+          
+          Write-Host "Waiting 5 seconds for app to initialize..."
           Start-Sleep -Seconds 5
+          
+          Write-Host "Checking if Port 8000 is active..."
+          Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Format-Table
+          
           Write-Host "=== gui_app.py STDOUT ==="
           Get-Content -Path "gui_app.log" -ErrorAction SilentlyContinue
           Write-Host "=== gui_app.py STDERR ==="
           Get-Content -Path "gui_app_err.log" -ErrorAction SilentlyContinue
-
-      - name: Debug Port 8000
-        shell: pwsh
-        run: |
-          Write-Host "Checking if Port 8000 is active..."
-          Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Format-Table
           
-          Write-Host "Testing connection to 127.0.0.1:8000..."
-          Test-NetConnection -Port 8000 -ComputerName 127.0.0.1 -WarningAction SilentlyContinue
-
-      - name: Expose App Port (8000) via Bore
-        if: ${{ inputs.mode == 'web-tunnel' }}
-        shell: pwsh
-        run: |
           Write-Host "Downloading Bore Tunnel..."
           Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.2/bore-v0.5.2-x86_64-pc-windows-msvc.zip -OutFile bore.zip
           Expand-Archive bore.zip -DestinationPath .
+          
           Write-Host "--------------------------------------------------------"
           Write-Host "Tunnel is starting. Look at the output lines below to find"
           Write-Host "the public address (e.g. bore.pub:xxxxx)."
