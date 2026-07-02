@@ -1040,8 +1040,16 @@ def run():
                 ])
             elif system == "Windows":  # Windows
                 profile_dir = os.path.join(EXTERNAL_DIR, "chrome_profile", "Dashboard")
+                chrome_path = "chrome.exe"
+                for path_var in ["ProgramFiles", "ProgramFiles(x86)", "LocalAppData"]:
+                    val = os.environ.get(path_var)
+                    if val:
+                        p = os.path.join(val, "Google\\Chrome\\Application\\chrome.exe")
+                        if os.path.exists(p):
+                            chrome_path = p
+                            break
                 proc = subprocess.Popen([
-                    "chrome.exe", 
+                    chrome_path, 
                     f"--app={url}",
                     f"--user-data-dir={profile_dir}",
                     "--no-first-run"
@@ -1097,8 +1105,16 @@ def run():
                     ])
                 elif system == "Windows":
                     profile_dir = os.path.join(EXTERNAL_DIR, "chrome_profile", "Dashboard")
+                    chrome_path = "chrome.exe"
+                    for path_var in ["ProgramFiles", "ProgramFiles(x86)", "LocalAppData"]:
+                        val = os.environ.get(path_var)
+                        if val:
+                            p = os.path.join(val, "Google\\Chrome\\Application\\chrome.exe")
+                            if os.path.exists(p):
+                                chrome_path = p
+                                break
                     subprocess.Popen([
-                        "chrome.exe", 
+                        chrome_path, 
                         f"--app={url}",
                         f"--user-data-dir={profile_dir}",
                         "--no-first-run"
