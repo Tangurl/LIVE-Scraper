@@ -47,6 +47,15 @@ jobs:
           Write-Host "=== gui_app.py STDERR ==="
           Get-Content -Path "gui_app_err.log" -ErrorAction SilentlyContinue
 
+      - name: Debug Port 8000
+        shell: pwsh
+        run: |
+          Write-Host "Checking if Port 8000 is active..."
+          Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue | Format-Table
+          
+          Write-Host "Testing connection to 127.0.0.1:8000..."
+          Test-NetConnection -Port 8000 -ComputerName 127.0.0.1 -WarningAction SilentlyContinue
+
       - name: Expose App Port (8000) via Bore
         if: ${{ inputs.mode == 'web-tunnel' }}
         shell: pwsh
