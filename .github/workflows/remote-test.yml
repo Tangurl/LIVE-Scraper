@@ -59,7 +59,7 @@ jobs:
           Write-Host "the public address (e.g. bore.pub:xxxxx)."
           Write-Host "Open http://bore.pub:xxxxx in your Mac's browser to test."
           Write-Host "--------------------------------------------------------"
-          .\bore.exe local 8000 --to bore.pub
+          .\bore.exe local 8000 --to bore.pub --local-host 127.0.0.1
 
       # MODE 2: Windows Remote Desktop (RDP) Setup
       - name: Enable RDP and Set Password
@@ -89,4 +89,4 @@ jobs:
           Write-Host "  - Username: runneradmin"
           Write-Host "  - Password: LiveScraper123!"
           Write-Host "--------------------------------------------------------"
-          .\bore.exe local 3389 --to bore.pub
+          .\bore.exe local 3389 --to bore.pub --local-host 127.0.0.1
