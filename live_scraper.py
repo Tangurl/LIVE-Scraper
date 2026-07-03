@@ -179,6 +179,36 @@ def load_recent_saved_comments(csv_path, limit=200):
         print(f"  [Comment Scraper] Error reading recent comments for deduplication: {e}")
     return recent
 
+def get_element_text_with_emojis(driver, element):
+    """Extracts text from an element, replacing emoji <img> tags with their alt attributes."""
+    js_script = """
+    function getMessageText(element) {
+        var text = "";
+        var childNodes = element.childNodes;
+        for (var i = 0; i < childNodes.length; i++) {
+            var node = childNodes[i];
+            if (node.nodeType === Node.TEXT_NODE) {
+                text += node.textContent;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'IMG') {
+                    var alt = node.getAttribute('alt');
+                    if (alt) {
+                        text += alt;
+                    }
+                } else {
+                    text += getMessageText(node);
+                }
+            }
+        }
+        return text;
+    }
+    return getMessageText(arguments[0]);
+    """
+    try:
+        return driver.execute_script(js_script, element).strip()
+    except Exception as e:
+        return element.text.strip()
+
 def scrape_youtube_comments_live(driver):
     """Parses live chat comments from YouTube live player iframe."""
     comments = []
@@ -195,8 +225,10 @@ def scrape_youtube_comments_live(driver):
         elements = driver.find_elements(By.CSS_SELECTOR, "yt-live-chat-text-message-renderer")
         for el in elements:
             try:
-                author = el.find_element(By.CSS_SELECTOR, "#author-name").text.strip()
-                message = el.find_element(By.CSS_SELECTOR, "#message").text.strip()
+                author_el = el.find_element(By.CSS_SELECTOR, "#author-name")
+                author = get_element_text_with_emojis(driver, author_el)
+                message_el = el.find_element(By.CSS_SELECTOR, "#message")
+                message = get_element_text_with_emojis(driver, message_el)
                 if author or message:
                     comments.append((author, message))
             except:
@@ -236,7 +268,7 @@ def scrape_facebook_comments_live(driver):
         articles = driver.find_elements(By.XPATH, "//*[@role='article']")
         for art in articles:
             try:
-                txt = art.text.strip()
+                txt = get_element_text_with_emojis(driver, art)
                 if not txt:
                     continue
                 lines = [line.strip() for line in txt.split('\n') if line.strip()]
@@ -267,14 +299,14 @@ def scrape_tiktok_comments_live(driver):
                 # Username is in div with class containing 'text-UIText3'
                 try:
                     user_el = row.find_element(By.CSS_SELECTOR, "div[class*='text-UIText3']")
-                    username = user_el.text.strip()
+                    username = get_element_text_with_emojis(driver, user_el)
                 except:
                     username = ""
                 
                 # Comment text is in the last child element of the row container
                 children = row.find_elements(By.XPATH, "./*")
                 if children and username:
-                    message = children[-1].text.strip()
+                    message = get_element_text_with_emojis(driver, children[-1])
                     if message and message != username:
                         comments.append((username, message))
             except:
@@ -291,10 +323,11 @@ def scrape_x_comments_live(driver):
         for tweet in tweet_elements:
             try:
                 user_el = tweet.find_element(By.CSS_SELECTOR, "[data-testid='User-Name']")
-                user_text = user_el.text.split('\n')[0]
+                user_text_full = get_element_text_with_emojis(driver, user_el)
+                user_text = user_text_full.split('\n')[0]
                 
                 text_el = tweet.find_element(By.CSS_SELECTOR, "[data-testid='tweetText']")
-                msg_text = text_el.text.strip()
+                msg_text = get_element_text_with_emojis(driver, text_el)
                 
                 if user_text or msg_text:
                     comments.append((user_text, msg_text))
