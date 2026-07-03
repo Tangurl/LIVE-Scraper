@@ -1091,7 +1091,7 @@ def upload_screenshot_to_google_drive(creds, filepath, filename):
         
         files = {
             "metadata": (None, json.dumps(metadata), "application/json; charset=UTF-8"),
-            "file": (filename, open(filepath, "rb", encoding="utf-8"), "image/png")
+            "file": (filename, open(filepath, "rb"), "image/png")
         }
         
         r_upload = requests.post(upload_url, headers=headers, files=files, timeout=20)

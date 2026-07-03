@@ -1,5 +1,17 @@
 import os
 import sys
+import io
+if sys.platform == "win32":
+    if sys.stdout is None:  # happens with --noconsole
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    else:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+    else:
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+        
 import json
 import time
 import subprocess
@@ -1137,6 +1149,7 @@ def run():
         httpd.server_close()
 
 if __name__ == "__main__":
+
     if len(sys.argv) > 1 and sys.argv[1] == "--run-scraper":
         import live_scraper
         sys.argv.remove("--run-scraper")
