@@ -4,12 +4,12 @@ import io
 if sys.platform == "win32":
     if sys.stdout is None:  # happens with --noconsole
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
-    else:
+    elif getattr(sys.stdout, "encoding", "").lower() != "utf-8":
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
     if sys.stderr is None:
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
-    else:
+    elif getattr(sys.stderr, "encoding", "").lower() != "utf-8":
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
         
 import json

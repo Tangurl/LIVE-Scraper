@@ -4,12 +4,12 @@ import io
 if sys.platform == "win32":
     if sys.stdout is None:  # happens with --noconsole
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
-    else:
+    elif getattr(sys.stdout, "encoding", "").lower() != "utf-8":
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
     if sys.stderr is None:
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
-    else:
+    elif getattr(sys.stderr, "encoding", "").lower() != "utf-8":
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 import signal
 import re
@@ -161,7 +161,7 @@ def load_recent_saved_comments(csv_path, limit=200):
         return set()
     recent = set()
     try:
-        with open(csv_path, "r", encoding="utf-8") as f:
+        with open(csv_path, "r", encoding="utf-8-sig") as f:
             reader = csv.reader(f)
             # Skip header
             header = next(reader, None)
@@ -336,7 +336,7 @@ def save_comments(publisher_name, platform, resolved_url, comments, stream_title
         
     # 2. Save to local CSV
     try:
-        with open(comments_csv, mode="a", encoding="utf-8", newline="") as f:
+        with open(comments_csv, mode="a", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
             if not csv_exists:
                 writer.writerow(["Timestamp (ICT)", "Channel", "Platform", "Live URL", "Title", "Username", "Comment Text"])
@@ -1474,7 +1474,7 @@ def save_results_and_sheet(session_data, now_str, output_file):
     # Write to CSV
     if results_rows:
         file_exists = os.path.exists(output_file)
-        with open(output_file, "a", encoding="utf-8", newline="") as f:
+        with open(output_file, "a", encoding="utf-8-sig", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["Time", "Channel name", "platform", "Type", "views", "title"])
             if not file_exists:
                 writer.writeheader()
