@@ -18,7 +18,7 @@ import subprocess
 import threading
 import atexit
 import signal
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 import selenium.webdriver.chrome.webdriver
 import selenium.webdriver.chrome.options
 import selenium.webdriver.chrome.service
@@ -880,6 +880,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         driver.get("https://www.facebook.com/")
                     elif platform == "youtube":
                         driver.get("https://www.youtube.com/")
+                    elif platform == "x":
+                        driver.get("https://x.com/")
                     else:
                         driver.get("https://www.google.com")
                         
@@ -1098,7 +1100,7 @@ def run():
     
     server_address = ("127.0.0.1", PORT)
     try:
-        httpd = HTTPServer(server_address, DashboardHandler)
+        httpd = ThreadingHTTPServer(server_address, DashboardHandler)
     except OSError as e:
         # 48 = macOS/Linux address already in use, 98 = Linux alternative, 10048 = Windows address already in use
         if e.errno in (48, 98, 10048) or "already in use" in str(e):

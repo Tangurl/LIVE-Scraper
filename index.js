@@ -311,6 +311,16 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     });
   }
+
+  // X Scan Warning Modal Event Listeners
+  const xScanWarningModal = document.getElementById("x-scan-warning-modal");
+  const btnCloseXScanWarningModal = document.getElementById("btn-close-x-scan-warning-modal");
+  const btnOkXScanWarning = document.getElementById("btn-ok-x-scan-warning");
+  const closeXScanWarningModal = () => {
+    if (xScanWarningModal) xScanWarningModal.classList.remove("open");
+  };
+  if (btnCloseXScanWarningModal) btnCloseXScanWarningModal.addEventListener("click", closeXScanWarningModal);
+  if (btnOkXScanWarning) btnOkXScanWarning.addEventListener("click", closeXScanWarningModal);
 });
 
 // --- API ACTIONS ---
@@ -1160,7 +1170,11 @@ function openUrlModal(channelName, rowIndex) {
   scanResultsList.innerHTML = "";
   
   if (defaultUrl) {
-    scanDefaultUrlInfo.innerText = `Default URL: ${defaultUrl}`;
+    if (rowData.platform === "x") {
+      scanDefaultUrlInfo.innerHTML = `Default URL: <code>${defaultUrl}</code><br><span style="font-size:10px;color:var(--text-color-muted, #888);display:block;margin-top:4px;">💡 Note: For X, direct broadcast links are recommended. Profile scanning requires enabling persistent profile & logging in via helper.</span>`;
+    } else {
+      scanDefaultUrlInfo.innerText = `Default URL: ${defaultUrl}`;
+    }
     scanDefaultUrlInfo.classList.remove("hidden");
     scanControlsGroup.classList.remove("hidden");
     scanNoDefaultUrl.classList.add("hidden");
@@ -1497,6 +1511,11 @@ function runLiveScan() {
         if (matches.length === 0) {
           scanResultsList.innerHTML = '<div class="scan-info-text">No active live streams found matching keyword.</div>';
           scanResultsContainer.classList.remove("hidden");
+          
+          if (rowData.platform === "x") {
+            const xScanWarningModal = document.getElementById("x-scan-warning-modal");
+            if (xScanWarningModal) xScanWarningModal.classList.add("open");
+          }
           return;
         }
         

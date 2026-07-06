@@ -1351,6 +1351,8 @@ def scrape_x_live(driver, channel_profile_urls, topic_keywords):
         target_title = ""
         try:
             target_url = None
+            tweet_links = []
+            broadcast_links = []
             if "/broadcasts/" in clean_url or "/status/" in clean_url:
                 target_url = clean_url
                 target_title = "X Broadcast" if "/broadcasts/" in clean_url else "X Status"
@@ -1362,8 +1364,6 @@ def scrape_x_live(driver, channel_profile_urls, topic_keywords):
                 
                 # Look for status links and broadcast links
                 a_tags = driver.find_elements(By.TAG_NAME, "a")
-                tweet_links = []
-                broadcast_links = []
                 
                 for a in a_tags:
                     try:
@@ -1421,9 +1421,15 @@ def scrape_x_live(driver, channel_profile_urls, topic_keywords):
                     players = driver.find_elements(By.XPATH, "//*[@data-testid='videoPlayer' or @data-testid='videoComponent']")
                     for player in players:
                         p_text = player.text
-                        if "LIVE" in p_text or "สด" in p_text:
+                        if "LIVE" in p_text.upper() or "สด" in p_text:
                             is_active_live = True
                             break
+                    if not is_active_live:
+                        badges = driver.find_elements(By.XPATH, "//*[text()='LIVE' or text()='Live' or text()='สด']")
+                        for badge in badges:
+                            if badge.is_displayed():
+                                is_active_live = True
+                                break
                 except Exception as check_err:
                     print(f"  [X] Error checking active live status: {check_err}")
                     
@@ -1431,7 +1437,7 @@ def scrape_x_live(driver, channel_profile_urls, topic_keywords):
                     print(f"  [X] Stream is not currently live (ended live stream or normal video): {target_url}")
                     return 0, target_title, target_url
                 
-                xpath_query = "//*[contains(text(), 'watching') or contains(text(), 'view') or contains(text(), 'คนดู') or contains(text(), 'ผู้ชม')]"
+                xpath_query = "//*[contains(text(), 'watching') or contains(text(), 'Watching') or contains(text(), 'view') or contains(text(), 'View') or contains(text(), 'คนดู') or contains(text(), 'ผู้ชม')]"
                 elements = driver.find_elements(By.XPATH, xpath_query)
                 for el in elements:
                     try:
@@ -2245,54 +2251,59 @@ def scan_tiktok_for_keyword(driver, default_url, keyword):
 def scan_x_for_keyword(driver, default_url, keyword):
     """Scans X profile feed for active broadcasts/tweets matching the keyword."""
     clean_url = default_url.split('?')[0].rstrip('/')
-    print(f"  [Scan X] Loading profile page: {clean_url}")
     matches = []
     try:
-        driver.get(clean_url)
-        time.sleep(7)
-        
-        a_tags = driver.find_elements(By.TAG_NAME, "a")
-        tweet_links = []
-        broadcast_links = []
-        for a in a_tags:
-            try:
-                href = a.get_attribute("href")
-                if href:
-                    if "/status/" in href:
-                        tweet_links.append(href.split('?')[0])
-                    elif "/broadcasts/" in href:
-                        broadcast_links.append(href.split('?')[0])
-            except:
-                pass
-                
-        tweet_links = list(set(tweet_links))
-        broadcast_links = list(set(broadcast_links))
-        
         target_url = None
         target_title = ""
         
-        if broadcast_links:
-            target_url = broadcast_links[0]
-            target_title = "X Broadcast"
+        if "/broadcasts/" in clean_url or "/status/" in clean_url:
+            target_url = clean_url
+            target_title = "X Broadcast" if "/broadcasts/" in clean_url else "X Status"
+            print(f"  [Scan X] Detected direct target URL: {target_url}")
+        else:
+            print(f"  [Scan X] Loading profile page: {clean_url}")
+            driver.get(clean_url)
+            time.sleep(7)
             
-        if not target_url and tweet_links:
-            tweets = driver.find_elements(By.XPATH, "//article")
-            for tweet in tweets:
+            a_tags = driver.find_elements(By.TAG_NAME, "a")
+            tweet_links = []
+            broadcast_links = []
+            for a in a_tags:
                 try:
-                    text = tweet.text
-                    if keyword.lower() in text.lower():
-                        anchors = tweet.find_elements(By.TAG_NAME, "a")
-                        for a in anchors:
-                            href = a.get_attribute("href")
-                            if href and "/status/" in href:
-                                target_url = href.split('?')[0]
-                                target_title = text.split('\n')[0] if text else "Matched Tweet"
-                                break
-                    if target_url:
-                        break
+                    href = a.get_attribute("href")
+                    if href:
+                        if "/status/" in href:
+                            tweet_links.append(href.split('?')[0])
+                        elif "/broadcasts/" in href:
+                            broadcast_links.append(href.split('?')[0])
                 except:
                     pass
                     
+            tweet_links = list(set(tweet_links))
+            broadcast_links = list(set(broadcast_links))
+            
+            if broadcast_links:
+                target_url = broadcast_links[0]
+                target_title = "X Broadcast"
+                
+            if not target_url and tweet_links:
+                tweets = driver.find_elements(By.XPATH, "//article")
+                for tweet in tweets:
+                    try:
+                        text = tweet.text
+                        if keyword.lower() in text.lower():
+                            anchors = tweet.find_elements(By.TAG_NAME, "a")
+                            for a in anchors:
+                                href = a.get_attribute("href")
+                                if href and "/status/" in href:
+                                    target_url = href.split('?')[0]
+                                    target_title = text.split('\n')[0] if text else "Matched Tweet"
+                                    break
+                        if target_url:
+                            break
+                    except:
+                        pass
+                        
         if target_url:
             print(f"  [Scan X] Inspecting target link: {target_url}")
             driver.get(target_url)
@@ -2304,15 +2315,21 @@ def scan_x_for_keyword(driver, default_url, keyword):
                 players = driver.find_elements(By.XPATH, "//*[@data-testid='videoPlayer' or @data-testid='videoComponent']")
                 for player in players:
                     p_text = player.text
-                    if "LIVE" in p_text or "สด" in p_text:
+                    if "LIVE" in p_text.upper() or "สด" in p_text:
                         is_active_live = True
                         break
+                if not is_active_live:
+                    badges = driver.find_elements(By.XPATH, "//*[text()='LIVE' or text()='Live' or text()='สด']")
+                    for badge in badges:
+                        if badge.is_displayed():
+                            is_active_live = True
+                            break
             except Exception as check_err:
                 print(f"  [Scan X] Error checking active live status: {check_err}")
                 
             if is_active_live:
                 view_val = 0
-                xpath_query = "//*[contains(text(), 'watching') or contains(text(), 'view') or contains(text(), 'คนดู') or contains(text(), 'ผู้ชม')]"
+                xpath_query = "//*[contains(text(), 'watching') or contains(text(), 'Watching') or contains(text(), 'view') or contains(text(), 'View') or contains(text(), 'คนดู') or contains(text(), 'ผู้ชม')]"
                 elements = driver.find_elements(By.XPATH, xpath_query)
                 for el in elements:
                     try:

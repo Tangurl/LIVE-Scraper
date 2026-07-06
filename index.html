@@ -93,6 +93,7 @@
               <option value="tiktok">TikTok</option>
               <option value="facebook">Facebook</option>
               <option value="youtube">YouTube</option>
+              <option value="x">X (Twitter)</option>
             </select>
             <button id="btn-open-login" class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; margin-top: 0; white-space: nowrap; height: 28px; line-height: 1;">Open Chrome</button>
           </div>
@@ -223,6 +224,9 @@
         <div class="form-group">
           <label for="settings-default-x">X (Twitter) Default URL</label>
           <input type="text" id="settings-default-x" placeholder="e.g. https://x.com/ThaiPBS">
+          <span style="font-size: 10px; color: var(--text-color-muted, #888); display: block; margin-top: 3px;">
+            💡 For X, it is highly recommended to configure a direct broadcast link (e.g. <code>https://x.com/i/broadcasts/xxx</code>). Profile page scanning requires you to enable "Use Persistent Profile" and log in using the Login Helper.
+          </span>
         </div>
       </div>
       <div class="modal-footer">
@@ -332,6 +336,37 @@
       <div class="modal-footer">
         <button id="btn-cancel-url-dump" class="btn btn-secondary">Cancel</button>
         <button id="btn-import-url-dump" class="btn btn-primary">Import URLs</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- X SCAN WARNING MODAL -->
+  <div id="x-scan-warning-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 480px;">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255, 193, 7, 0.2); padding-bottom: 12px;">
+        <h3 style="color: #ffc107; display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px;">
+          ⚠️ X Scanning Advisory
+        </h3>
+        <button id="btn-close-x-scan-warning-modal" class="close-icon">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 15px;">
+        <p style="font-size: 13px; line-height: 1.5; margin-top: 0; color: var(--text-color);">
+          The scan completed but found no active live streams. This is common when scanning public X profile pages because X restricts anonymous profile access or hides live badges.
+        </p>
+        <p style="font-size: 13px; font-weight: bold; margin-top: 15px; margin-bottom: 8px; color: var(--text-color);">
+          To fix this, please try one of the following:
+        </p>
+        <ul style="font-size: 13px; line-height: 1.6; padding-left: 20px; color: var(--text-color-secondary); margin-bottom: 0;">
+          <li style="margin-bottom: 8px;">
+            <strong>Option A (Recommended)</strong>: Copy the direct broadcast URL (e.g. <code>https://x.com/i/broadcasts/xxx</code>) and set it directly for the channel.
+          </li>
+          <li>
+            <strong>Option B (Persistent Profile)</strong>: Enable <strong>"Use Persistent Profile"</strong> in the settings panel and use the **Login Helper** (Open Chrome) to log in to X.
+          </li>
+        </ul>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 15px; display: flex; justify-content: flex-end;">
+        <button id="btn-ok-x-scan-warning" class="btn btn-primary" style="padding: 6px 20px; font-size: 12px;">OK, I Understand</button>
       </div>
     </div>
   </div>
