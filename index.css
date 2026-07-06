@@ -1,16 +1,16 @@
 :root {
-  --bg-color: #090a0f;
-  --panel-bg: rgba(20, 22, 31, 0.65);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
+  --bg-color: #f4f5f7;
+  --panel-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
   
-  --primary: #8b5cf6;
-  --primary-hover: #7c3aed;
-  --primary-glow: rgba(139, 92, 246, 0.35);
+  --primary: #f97316;
+  --primary-hover: #ea580c;
+  --primary-glow: rgba(249, 115, 22, 0.35);
   
-  --secondary: #374151;
-  --secondary-hover: #4b5563;
+  --secondary: #e5e7eb;
+  --secondary-hover: #d1d5db;
   
   --danger: #ef4444;
   --danger-hover: #dc2626;
@@ -50,7 +50,7 @@ body {
 /* SIDEBAR */
 .sidebar {
   width: 280px;
-  background-color: #0e1017;
+  background-color: #ffffff;
   border-right: 1px solid var(--border-color);
   padding: 24px;
   display: flex;
@@ -73,7 +73,7 @@ body {
 .logo-section h2 {
   font-size: 20px;
   font-weight: 600;
-  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  background: linear-gradient(135deg, #fdba74, #f97316);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -149,8 +149,8 @@ body {
 }
 
 .channel-card:hover {
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(139, 92, 246, 0.08);
+  border-color: rgba(249, 115, 22, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(249, 115, 22, 0.08);
 }
 
 .channel-header {
@@ -190,8 +190,8 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   padding: 8px 8px;
 }
@@ -201,7 +201,7 @@ body {
 }
 
 .platform-select {
-  background-color: #1a1c26;
+  background-color: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-main);
   border-radius: 4px;
@@ -219,7 +219,7 @@ body {
 
 .btn-link-config {
   text-align: center;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(0, 0, 0, 0.03);
   color: var(--text-muted);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -232,7 +232,7 @@ body {
 }
 
 .btn-link-config:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(0, 0, 0, 0.08);
   color: var(--text-main);
 }
 
@@ -284,7 +284,7 @@ body {
 
 .btn-secondary {
   background-color: var(--secondary);
-  color: var(--text-main);
+  color: #374151;
   border: 1px solid var(--border-color);
 }
 
@@ -331,7 +331,7 @@ body {
 }
 
 .btn-icon-only:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.05);
   color: var(--danger);
 }
 
@@ -346,7 +346,26 @@ body {
 .btn-add-row:hover {
   border-color: var(--primary);
   color: var(--primary);
-  background-color: rgba(139, 92, 246, 0.02);
+  background-color: rgba(249, 115, 22, 0.05);
+}
+
+.add-channel-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  cursor: pointer;
+  border: 2px dashed var(--border-color);
+  background-color: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+.add-channel-card:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: rgba(249, 115, 22, 0.05);
 }
 
 /* FORM STYLING */
@@ -367,7 +386,7 @@ body {
 
 .form-group input,
 .form-group textarea {
-  background-color: #14161f;
+  background-color: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-main);
   border-radius: 8px;
@@ -442,7 +461,7 @@ body {
 }
 
 .terminal-output {
-  background-color: #0b0c10;
+  background-color: #111827;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 16px;
@@ -565,7 +584,7 @@ body {
 
 .scan-input-group input {
   flex-grow: 1;
-  background-color: #1a1c26;
+  background-color: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-main);
   border-radius: 6px;
@@ -614,7 +633,7 @@ body {
 }
 
 .scan-results-container {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
@@ -643,8 +662,8 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 6px;
   font-size: 12px;
 }
@@ -694,7 +713,7 @@ body {
 .btn-settings-cog:hover,
 .btn-url-dump:hover {
   color: var(--primary) !important;
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 .hidden {
@@ -708,7 +727,7 @@ body {
   gap: 12px;
   margin: 16px 0;
   padding: 14px;
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   max-height: 300px;
@@ -768,7 +787,7 @@ body {
 /* Segmented type selector */
 .type-segmented-control {
   display: flex;
-  background-color: #1a1c26;
+  background-color: #f3f4f6;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   overflow: hidden;

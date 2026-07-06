@@ -32,7 +32,6 @@ const loginHelperPlatformSelect = document.getElementById("login-helper-platform
 const btnOpenLogin = document.getElementById("btn-open-login");
 const btnSaveConfig = document.getElementById("btn-save-config");
 const btnQuitApp = document.getElementById("btn-quit-app");
-const btnAddChannel = document.getElementById("btn-add-channel");
 const channelsGrid = document.getElementById("channels-grid");
 const terminalOutput = document.getElementById("terminal-output");
 const btnClearLogs = document.getElementById("btn-clear-logs");
@@ -235,7 +234,6 @@ window.addEventListener("DOMContentLoaded", () => {
     btnCloseSchedulerUpdateModal.addEventListener("click", closeSchedulerUpdateModal);
   }
   
-  btnAddChannel.addEventListener("click", addNewChannel);
   btnClearLogs.addEventListener("click", () => {
     terminalOutput.innerHTML = '<span class="terminal-placeholder">Logs cleared. Running scraper will show fresh output...</span>';
   });
@@ -1065,6 +1063,13 @@ function renderChannels() {
     
     channelsGrid.appendChild(card);
   }
+
+  // Add Channel Card
+  const addCard = document.createElement("div");
+  addCard.className = "card add-channel-card";
+  addCard.innerHTML = "<span>+ Add News Channel</span>";
+  addCard.addEventListener("click", addNewChannel);
+  channelsGrid.appendChild(addCard);
 }
 
 // --- CHANNEL MODIFICATION ---
