@@ -240,49 +240,92 @@ def scrape_youtube_comments_live(driver):
         print(f"  [Comment Scraper] YouTube parse error: {e}")
     return comments
 
+def is_old_facebook_timestamp(text):
+    text_clean = text.lower().strip()
+    # Parse number and unit (allowing optional trailing dot for abbreviation units like ชม.)
+    match = re.match(r'^(\d+)\s*(m|h|d|y|w|min|hr|day|yr|wk|นาที|ชม|ชั่วโมง|วัน|ปี|สัปดาห์)\.?s?$', text_clean)
+    if match:
+        num = int(match.group(1))
+        unit = match.group(2)
+        # Minute units: allow 1m/1 min/1 นาที and 2m/2 min/2 นาที to pass as fresh comments
+        if unit in ["m", "min", "นาที"]:
+            if num > 2:
+                return True
+        else:
+            # Other units (hour, day, week, year) are always old
+            return True
+        
+    # Matches date patterns (e.g. '25 jun', 'jun 25', '25 june 2026')
+    months_pattern = r'(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)'
+    if re.search(months_pattern, text_clean):
+        return True
+        
+    # Matches numeric date patterns (e.g. '12/10/26', '2026-10-12')
+    if re.search(r'\d+[\/\-]\d+', text_clean):
+        return True
+        
+    return False
+
 def scrape_facebook_comments_live(driver):
     """Parses live comments from Facebook video page using role='article' blocks."""
     comments = []
-    
-    def is_old_facebook_timestamp(text):
-        text_clean = text.lower().strip()
-        # Matches relative times that are NOT seconds/just now:
-        # e.g., '1m', '12m', '1h', '2d', '1y', '1 min', '2 hrs', '3 days', '4w', '5 wk'
-        # Thai: '1 นาที', '1 ชม.', '1 ชั่วโมง', '1 วัน', '1 ปี', '1 สัปดาห์'
-        relative_old_pattern = r'^\d+\s*(?:m|h|d|y|w|min|hr|day|yr|wk|นาที|ชม|ชั่วโมง|วัน|ปี|สัปดาห์)s?$'
-        if re.match(relative_old_pattern, text_clean):
-            return True
-            
-        # Matches date patterns (e.g. '25 jun', 'jun 25', '25 june 2026')
-        months_pattern = r'(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)'
-        if re.search(months_pattern, text_clean):
-            return True
-            
-        # Matches numeric date patterns (e.g. '12/10/26', '2026-10-12')
-        if re.search(r'\d+[\/\-]\d+', text_clean):
-            return True
-            
-        return False
 
     try:
         articles = driver.find_elements(By.XPATH, "//*[@role='article']")
         for art in articles:
             try:
-                txt = get_element_text_with_emojis(driver, art)
-                if not txt:
+                # Find author name
+                author_el = None
+                author_els = art.find_elements(By.CSS_SELECTOR, "a[role='link'][aria-hidden='false']")
+                if author_els:
+                    author_el = author_els[0]
+                else:
+                    author_els = art.find_elements(By.XPATH, ".//a[@role='link']//span[@dir='auto']")
+                    if author_els:
+                        author_el = author_els[0]
+                
+                if not author_el:
                     continue
-                lines = [line.strip() for line in txt.split('\n') if line.strip()]
-                if len(lines) >= 2:
-                    author = lines[0]
-                    message = lines[1]
-                    # Filter out action words/buttons if they mistakenly appear
-                    if author.lower() not in ["like", "reply", "share", "สด", "live"] and message.lower() not in ["like", "reply", "share"]:
-                        # If there is a relative time/timestamp at the end, filter out old comments
-                        if len(lines) >= 3:
-                            last_line = lines[-1]
-                            if is_old_facebook_timestamp(last_line):
-                                continue
-                        comments.append((author, message))
+                
+                author = get_element_text_with_emojis(driver, author_el).strip()
+                if not author:
+                    continue
+                
+                # Find message text
+                message_el = None
+                message_els = art.find_elements(By.CSS_SELECTOR, "span[dir='auto'][lang]")
+                if message_els:
+                    message_el = message_els[0]
+                else:
+                    message_els = art.find_elements(By.XPATH, ".//div[@dir='auto'][contains(@style, 'text-align: start')]")
+                    if message_els:
+                        message_el = message_els[0]
+                
+                if not message_el:
+                    continue
+                
+                message = get_element_text_with_emojis(driver, message_el).strip()
+                if not message:
+                    continue
+                
+                # Filter out control buttons
+                if author.lower() in ["like", "reply", "share", "สด", "live"] or message.lower() in ["like", "reply", "share"]:
+                    continue
+                
+                # Find timestamp in li elements
+                timestamp = ""
+                li_elements = art.find_elements(By.TAG_NAME, "li")
+                for li in li_elements:
+                    text = li.text.strip()
+                    if text:
+                        timestamp = text
+                        break
+                
+                if timestamp:
+                    if is_old_facebook_timestamp(timestamp):
+                        continue
+                        
+                comments.append((author, message))
             except:
                 pass
     except Exception as e:
@@ -446,8 +489,32 @@ def save_comments(publisher_name, platform, resolved_url, comments, stream_title
 
 def scrape_comments_for_stream(driver, publisher_name, platform, resolved_url, stream_title=""):
     """Helper to run the comment scrape on the designated live stream URL for the configured duration."""
+    if platform.lower() == "facebook":
+        try:
+            match = re.search(r'/videos/(?:[^/]+/)*(\d+)', resolved_url) or re.search(r'[?&]v=(\d+)', resolved_url) or re.search(r'/live/(?:[^/]+/)*(\d+)', resolved_url)
+            if match:
+                video_id = match.group(1)
+                optimized_url = f"https://www.facebook.com/watch/?v={video_id}"
+                if resolved_url != optimized_url:
+                    print(f"  [Comment Scraper] Automatically optimized Facebook URL to watch layout: {optimized_url}")
+                    resolved_url = optimized_url
+        except Exception as opt_err:
+            print(f"  [Comment Scraper] Warning: Failed to optimize Facebook URL: {opt_err}")
+
     print(f"  [Comment Scraper] Scraping comments for {publisher_name} on {platform.upper()} (URL: {resolved_url}) for {COMMENT_DURATION} seconds...")
     try:
+        def force_click(el):
+            click_script = """
+            var el = arguments[0];
+            var mousedown = new MouseEvent('mousedown', {bubbles: true, cancelable: true, view: window});
+            var mouseup = new MouseEvent('mouseup', {bubbles: true, cancelable: true, view: window});
+            var click = new MouseEvent('click', {bubbles: true, cancelable: true, view: window});
+            el.dispatchEvent(mousedown);
+            el.dispatchEvent(mouseup);
+            el.dispatchEvent(click);
+            """
+            driver.execute_script(click_script, el)
+
         try:
             driver.get(resolved_url)
         except Exception as get_err:
@@ -459,11 +526,167 @@ def scrape_comments_for_stream(driver, publisher_name, platform, resolved_url, s
         all_comments = []
         seen_comments = set()
         
+        if platform.lower() == "facebook":
+            time.sleep(5)
+            # Try clicking potential video expanders/play buttons to start the video and enter watch mode
+            try:
+                # 1. Look for the exact transparent video overlay class you clicked
+                target_selector = "div.x1ey2m1c.x9f619.xtijo5x.x1o0tod.x10l6tqk.x13vifvy.x1ypdohk"
+                targets = driver.find_elements(By.CSS_SELECTOR, target_selector)
+                
+                # If not found, use a slightly more generic overlay selector
+                if not targets:
+                    targets = driver.find_elements(By.CSS_SELECTOR, "div.x1ey2m1c.xtijo5x")
+                if not targets:
+                    targets = driver.find_elements(By.CSS_SELECTOR, "div.xtijo5x")
+                
+                clicked_overlay = False
+                for target in targets:
+                    try:
+                        if target.is_displayed():
+                            print("  [Comment Scraper] Clicking direct video player overlay...")
+                            force_click(target)
+                            time.sleep(3)
+                            clicked_overlay = True
+                            break
+                    except:
+                        pass
+                
+                # 2. Recheck if comments are visible. If still not visible, look for play buttons as a fallback
+                comments = driver.find_elements(By.XPATH, "//*[@role='article']")
+                if not comments:
+                    print("  [Comment Scraper] Comments still not visible. Trying general play button overlays...")
+                    play_buttons = []
+                    player_containers = driver.find_elements(By.XPATH, "//*[@aria-label='Video player' or @aria-label='ผู้เล่นวิดีโอ']")
+                    for player in player_containers:
+                        play_buttons.extend(player.find_elements(By.XPATH, ".//*[@role='button']"))
+                    play_buttons.extend(driver.find_elements(By.XPATH, "//div[@role='button'][@aria-label='เล่นวิดีโอ' or @aria-label='Play' or @aria-label='Play video' or @aria-label='Watch' or @aria-label='รับชมสด']"))
+                    
+                    for btn in play_buttons:
+                        try:
+                            if btn.is_displayed():
+                                print("  [Comment Scraper] Clicking play button overlay...")
+                                force_click(btn)
+                                time.sleep(3)
+                                break
+                        except:
+                            pass
+            except Exception as click_err:
+                print(f"  [Comment Scraper] Warning during video player initialization: {click_err}")
+                
+            try:
+                print("  [Comment Scraper] Attempting to set Facebook comment sort to 'All Comments'...")
+                sort_dropdowns = driver.find_elements(By.CSS_SELECTOR, ".xe0p6wg > div:nth-child(1) > span:nth-child(1)")
+                if not sort_dropdowns:
+                    sort_dropdowns = driver.find_elements(By.CSS_SELECTOR, ".xe0p6wg")
+                if not sort_dropdowns:
+                    sort_dropdowns = driver.find_elements(By.XPATH, "//*[contains(text(), 'Most Relevant') or contains(text(), 'เกี่ยวข้องที่สุด') or contains(text(), 'Top Comments')]")
+                
+                if sort_dropdowns:
+                    force_click(sort_dropdowns[0])
+                    time.sleep(1.5)
+                    priority_keywords = [
+                        "Newest", "ล่าสุด", 
+                        "Live Comments", "ความคิดเห็นสด"
+                    ]
+                    xpath_opts = " or ".join([f"text()='{k}'" for k in priority_keywords])
+                    xpath_query = f"//*[{xpath_opts}]"
+                    options = driver.find_elements(By.XPATH, xpath_query)
+                    
+                    if not options:
+                        fallback_keywords = [
+                            "All Comments", "ความคิดเห็นทั้งหมด"
+                        ]
+                        xpath_opts = " or ".join([f"text()='{k}'" for k in fallback_keywords])
+                        xpath_query = f"//*[{xpath_opts}]"
+                        options = driver.find_elements(By.XPATH, xpath_query)
+                        
+                    if options:
+                        selected_text = options[0].text or "Newest/All"
+                        force_click(options[0])
+                        print(f"  [Comment Scraper] Successfully selected '{selected_text}' sort order.")
+                        time.sleep(2)
+                    else:
+                        print("  [Comment Scraper] Warning: Sort menu options not found.")
+                else:
+                    comments = driver.find_elements(By.XPATH, "//*[@role='article']")
+                    if comments:
+                        print("  [Comment Scraper] Facebook comment sort dropdown not found, but comments are visible (assuming Live Chat mode).")
+                    else:
+                        print("  [Comment Scraper] Warning: Facebook comment sort dropdown trigger not found.")
+            except Exception as sort_err:
+                print(f"  [Comment Scraper] Warning: Failed to set Facebook comment sort order: {sort_err}")
+        
+        # Check if persistent profile is enabled to determine refresh interval
+        use_persistent = False
+        try:
+            if os.path.exists(CONFIG_PATH):
+                with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    use_persistent = cfg.get("use_persistent_chrome_profile", False)
+        except:
+            pass
+
+        refresh_interval = 60 if use_persistent else 15
+        
         start_time = time.time()
         end_time = start_time + COMMENT_DURATION
         plat_lower = platform.lower()
+        last_refresh_time = start_time
+        
+        if plat_lower == "facebook":
+            if use_persistent:
+                print("  [Comment Scraper] Persistent profile is active. Real-time comments should stream automatically.")
+            else:
+                print("  [Comment Scraper] Running in anonymous mode. Will refresh page periodically to pull comments.")
         
         while time.time() < end_time:
+            if plat_lower == "facebook" and time.time() - last_refresh_time > refresh_interval:
+                print("  [Comment Scraper] Refreshing Facebook page to pull new comments...")
+                try:
+                    driver.refresh()
+                    time.sleep(5)
+                    print("  [Comment Scraper] Re-applying 'Newest' sort order...")
+                    sort_dropdowns = driver.find_elements(By.CSS_SELECTOR, ".xe0p6wg > div:nth-child(1) > span:nth-child(1)")
+                    if not sort_dropdowns:
+                        sort_dropdowns = driver.find_elements(By.CSS_SELECTOR, ".xe0p6wg")
+                    if not sort_dropdowns:
+                        sort_dropdowns = driver.find_elements(By.XPATH, "//*[contains(text(), 'Most Relevant') or contains(text(), 'เกี่ยวข้องที่สุด') or contains(text(), 'Top Comments')]")
+                    
+                    if sort_dropdowns:
+                        force_click(sort_dropdowns[0])
+                        time.sleep(1.5)
+                        priority_keywords = [
+                            "Newest", "ล่าสุด", 
+                            "Live Comments", "ความคิดเห็นสด"
+                        ]
+                        xpath_opts = " or ".join([f"text()='{k}'" for k in priority_keywords])
+                        xpath_query = f"//*[{xpath_opts}]"
+                        options = driver.find_elements(By.XPATH, xpath_query)
+                        
+                        if not options:
+                            fallback_keywords = [
+                                "All Comments", "ความคิดเห็นทั้งหมด"
+                            ]
+                            xpath_opts = " or ".join([f"text()='{k}'" for k in fallback_keywords])
+                            xpath_query = f"//*[{xpath_opts}]"
+                            options = driver.find_elements(By.XPATH, xpath_query)
+                            
+                        if options:
+                            selected_text = options[0].text or "Newest/All"
+                            force_click(options[0])
+                            print(f"  [Comment Scraper] Successfully selected '{selected_text}' sort order.")
+                            time.sleep(2)
+                    else:
+                        comments = driver.find_elements(By.XPATH, "//*[@role='article']")
+                        if comments:
+                            print("  [Comment Scraper] Facebook comment sort dropdown not found after refresh, but comments are visible (assuming Live Chat mode).")
+                        else:
+                            print("  [Comment Scraper] Warning: Facebook comment sort dropdown trigger not found after refresh.")
+                except Exception as ref_err:
+                    print(f"  [Comment Scraper] Warning during Facebook refresh: {ref_err}")
+                last_refresh_time = time.time()
+                
             comments = []
             if plat_lower == "youtube":
                 comments = scrape_youtube_comments_live(driver)
@@ -544,7 +767,7 @@ def get_ict_now():
 
 def setup_stealth_driver():
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
+    # chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
@@ -644,7 +867,7 @@ def setup_stealth_driver():
         ad_domains = [
             '*google-analytics.com*', '*doubleclick.net*', '*googlesyndication.com*',
             '*adnxs.com*', '*taboola.com*', '*outbrain.com*', '*adsystem*',
-            '*adservice*', '*googleadservices*', '*facebook.net*', '*facebook.com/tr*',
+            '*adservice*', '*googleadservices*', '*facebook.com/tr*',
             '*pubmatic.com*', '*criteo.com*', '*rubiconproject.com*', '*casalemedia.com*',
             '*openx.net*', '*adtech*', '*adform*', '*smartadserver*', '*adroll*',
             # TikTok/ByteDance telemetry and analytics endpoints
