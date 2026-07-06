@@ -525,11 +525,15 @@ def start_scraper_process(params=None):
         if channels:
             cmd.extend(["--channels"] + channels)
             
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    
     scraper_process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        cwd=EXTERNAL_DIR
+        cwd=EXTERNAL_DIR,
+        env=env
     )
     scraper_status = "running"
     
