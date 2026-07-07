@@ -29,6 +29,18 @@ Before running the application, make sure your machine has the following:
 
 ---
 
+## Usage Guidlines
+
+Some of the available features of this program requires logging in its respective platform via the persistent chrome profile.
+
+### 1. Facebook LIVE comment scraping
+
+### 2. TikTok LIVE views and comment scraping
+
+*Note: Scraping Facebook LIVE's views alone is possible without a logged in session, but comment scraping requires one.*
+
+---
+
 ## Configuration (`config.json`)
 
 The script depends on `config.json` in the root directory for target channels, scheduler intervals, and credentials. 
